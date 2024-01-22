@@ -6,16 +6,33 @@ import '../models/category.dart';
 import '../models/meal.dart';
 import 'meals_screen.dart';
 
-class CategoriesScreen extends StatelessWidget {
+class CategoriesScreen extends StatefulWidget {
   final List<Meal> availableMeals;
 
-  const CategoriesScreen(
-      {Key? key,
-      required this.availableMeals})
+  const CategoriesScreen({Key? key, required this.availableMeals})
       : super(key: key);
 
-  void _onTap(BuildContext context, Category selectedCategory) {
-    final displayedMeals = availableMeals
+  @override
+  State<CategoriesScreen> createState() => _CategoriesScreenState();
+}
+
+class _CategoriesScreenState extends State<CategoriesScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 300),
+        lowerBound: 0,
+        upperBound: 1);
+    _animationController.forward();
+  }
+
+  void _onTap(Category selectedCategory) {
+    final displayedMeals = widget.availableMeals
         .where((meal) => meal.categories.contains(selectedCategory.id))
         .toList();
 
@@ -30,19 +47,33 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView(
-      padding: const EdgeInsets.all(24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 3 / 2,
-          crossAxisSpacing: 20,
-          mainAxisSpacing: 20),
-      children: availableCategories
-          .map((category) => CategoryGridItem(
-                category: category,
-                onTap: () => _onTap(context, category),
-              ))
-          .toList(),
-    );
+    return AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) => SlideTransition(
+            position: Tween<Offset>(
+                    begin: const Offset(0, 1), end: const Offset(0, 0))
+                .animate(CurvedAnimation(
+                    parent: _animationController, curve: Curves.easeInOut)),
+            child: child),
+        child: GridView(
+          padding: const EdgeInsets.all(24),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 3 / 2,
+              crossAxisSpacing: 20,
+              mainAxisSpacing: 20),
+          children: availableCategories
+              .map((category) => CategoryGridItem(
+                    category: category,
+                    onTap: () => _onTap(category),
+                  ))
+              .toList(),
+        ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 }
